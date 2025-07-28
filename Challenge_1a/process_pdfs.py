@@ -209,8 +209,8 @@ def process_pdfs_in_directory(input_dir, output_dir):
                 print(f"Successfully generated {output_path}")
 
 if __name__ == "__main__":
-    INPUT_DIRECTORY = "/app/input"
-    OUTPUT_DIRECTORY = "/app/output"
+    INPUT_DIRECTORY = "app/input"
+    OUTPUT_DIRECTORY = "app/output"
 
     if not os.path.exists(INPUT_DIRECTORY):
         os.makedirs(INPUT_DIRECTORY)

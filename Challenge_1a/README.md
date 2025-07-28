@@ -147,12 +147,14 @@ docker build --platform linux/amd64 -t pdf-outline-extractor .
 
 # Run with volume mounts
 docker run --rm \
-  -v $(pwd)/input:/app/input:ro \
-  -v $(pwd)/output:/app/output \
+  -v $(pwd)/app/input:/app/input:ro \
+  -v $(pwd)/app/output:/app/output \
   --network none \
   pdf-outline-extractor
-```
 
+# Run with command in single line
+ docker run --rm -v "${PWD}\app\input:/app/input:ro" -v "${PWD}\app\output:/app/output" --network none pdf-outline-extractor:latest
+ ```
 ### **Local Development**
 ```bash
 # Install dependencies
