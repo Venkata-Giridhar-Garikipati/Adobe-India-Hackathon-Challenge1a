@@ -5,6 +5,13 @@ import re
 import time
 from collections import defaultdict
 
+# Performance Tuning Parameters
+MAX_PAGES = 50                    # Page limit (Adobe requirement: 50 pages max)
+TIMEOUT_SECONDS = 10             # Processing timeout (Adobe requirement: 10 seconds max)
+MIN_STYLE_FREQUENCY = 100        # Minimum style frequency for body text detection
+MAX_HEADING_LENGTH = 250         # Maximum heading text length
+TITLE_SEARCH_RATIO = 0.5         # Title search area (top half of first page)
+
 def get_style_statistics(doc):
     style_counts = defaultdict(int)
     for page in doc:
@@ -23,7 +30,7 @@ def classify_heading_levels(style_counts):
     if not style_counts:
         return {}, None
 
-    frequent_styles = {s: c for s, c in style_counts.items() if c > 100}
+    frequent_styles = {s: c for s, c in style_counts.items() if c > MIN_STYLE_FREQUENCY}
     body_style = max(frequent_styles, key=frequent_styles.get) if frequent_styles else max(style_counts, key=style_counts.get)
     body_size = body_style[0]
 
@@ -84,8 +91,8 @@ def extract_outline(doc_path):
         print(f"Error opening {doc_path}: {e}")
         return None
 
-    if doc.page_count > 50:
-        print(f"Skipping {doc_path} because it has more than 50 pages.")
+    if doc.page_count > MAX_PAGES:
+        print(f"Skipping {doc_path} because it has more than {MAX_PAGES} pages.")
         return None
 
     style_counts = get_style_statistics(doc)
@@ -110,7 +117,7 @@ def extract_outline(doc_path):
         title_blocks = []
         if title_style:
             for b in first_page_blocks:
-                if b['bbox'][1] > doc[0].rect.height * 0.5:
+                if b['bbox'][1] > doc[0].rect.height * TITLE_SEARCH_RATIO:
                     continue
                 if "lines" in b and b["lines"] and b["lines"][0]["spans"]:
                     s = b["lines"][0]["spans"][0]
@@ -132,7 +139,7 @@ def extract_outline(doc_path):
             span = b["lines"][0]["spans"][0]
             block_style = (round(span['size']), (span['flags'] & 2**4) > 0, span['font'])
             block_text = get_full_block_text(b)
-            if not block_text or len(block_text) > 250 or block_text.strip().isdigit():
+            if not block_text or len(block_text) > MAX_HEADING_LENGTH or block_text.strip().isdigit():
                 continue
             if block_text.endswith('.') and len(block_text.split()) > 10:
                 continue
@@ -176,8 +183,8 @@ def extract_outline(doc_path):
             title = h1s[0]['text']
 
     elapsed = time.time() - start_time
-    if elapsed > 10:
-        print(f"Warning: {doc_path} took {elapsed:.2f}s to process, which exceeds the 10-second limit.")
+    if elapsed > TIMEOUT_SECONDS:
+        print(f"Warning: {doc_path} took {elapsed:.2f}s to process, which exceeds the {TIMEOUT_SECONDS}-second limit.")
 
     return {
         "title": " ".join(title.split()),
